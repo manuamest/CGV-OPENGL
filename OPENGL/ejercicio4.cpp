@@ -8,13 +8,7 @@ typedef struct
     GLfloat z;
 } Angulo;
 
-Angulo angulos[] = {
-    {0.0f, 0.0f, 0.0f}, // Brazo Izquierdo
-    {0.0f, 0.0f, 0.0f}, // Antebrazo Izquierdo
-    {0.0f, 0.0f, 0.0f}, // Brazo Derecho
-    {0.0f, 0.0f, 0.0f}, // Antebrazo Derecho
-    // ... otras extremidades ...
-};
+int speed = 50;
 
 //--------------------------VARIABLES--------------------------------
 
@@ -37,6 +31,15 @@ bool rapido = false;
 int mouseX, mouseY;
 bool ctrlKeyPressed = false;
 bool altKeyPressed = false;
+
+void timerRotation(int value){
+    if (piernasLocas)
+    {
+        anguloMusloDerecho.z += 2.0f;
+        anguloMusloIzquierdo.z += 2.0f;
+    }
+    glutTimerFunc(speed, timerRotation, value); 
+}
 
 void reshape(int width, int height)
 {
@@ -114,7 +117,7 @@ void display()
     glLoadIdentity();
     drawTorso();
     glTranslatef(2.5f, 2.5f, 0.0f);
-    drawExtremity(anguloBrazoDerecho, anguloAntebrazoDerecho);
+    drawExtremity(anguloBrazoDerecho, anguloAntebrazoDerecho);  
     glTranslatef(-5.0f, 0.0f, 0.0f);
     drawExtremity(anguloBrazoIzquierdo, anguloAntebrazoIzquierdo);
     glTranslatef(1.0f, -6.0f, 0.0f);
@@ -160,10 +163,13 @@ void menu_3(int value)
     switch (value)
     {
     case 0:
-        rapido = false;     //Modo lento
+        speed = 100;        // Modo lento
         break;
     case 1:
-        rapido = true;      //Modo rápido
+        speed = 20;         // Modo rapido
+        break;
+    case 2:
+        speed = 10;         //Modo muy rapido
         break;
     }
 }
@@ -185,6 +191,8 @@ void init()
     int submenu_velocidades = glutCreateMenu(menu_3);
     glutAddMenuEntry("Lento", 0);
     glutAddMenuEntry("Rapido", 1);
+    glutAddMenuEntry("Muy rapido", 2);
+
 
     glutCreateMenu(menu_1);
     glutAddSubMenu("Visualizacion", submenu_visualizacion);
@@ -203,17 +211,7 @@ void idle()
         anguloMusloDerecho.z = mouseX;
         anguloMusloDerecho.z = mouseY;
     }
-    // Incrementa los ángulos de las piernas automáticamente
-    if (piernasLocas)
-    {
-        if (rapido) {
-            anguloMusloIzquierdo.y += 3.0f;
-            anguloMusloDerecho.y -= 3.0f;
-        } else {
-            anguloMusloIzquierdo.y += 1.0f;
-            anguloMusloDerecho.y -= 1.0f;
-        }
-    }
+
     display();
 }
 
@@ -224,18 +222,34 @@ void mouseMotion(int x, int y) {
     mouseY = y;
 }
 
-//--------------------------------------KEYBOARD---------------------------------------
+//--------------------------------------KEYBOARD----------------------------------------
 
+//Para el apartado del raton es necesario presionar Ctrl/Alt + CUALQUIER OTRA TECLA
+
+//-----------------------------------INSTRUCCIONES--------------------------------------
+//
+//                  Z----> CAMBIAR CODO/HOMBRO CADERA/RODILLA
+//
+//                  X----> CAMBIAR EXTREMIDAD
+//
+//                  QA---> MOVER EN EL EJE X
+//                  WS---> MOVER EN EL EJE Y
+//                  ED---> MOVER EN EL EJE Z
+//
+//                  CTRL-> PIERNA IZQUIERDA SIGUE AL RATON
+//                  ALT--> PIERNA DERECHA SIGUE AL RATON
+//
+//--------------------------------------------------------------------------------------
 void keyboard(unsigned char key, int x, int y)
 {   
 if (glutGetModifiers() & GLUT_ACTIVE_CTRL) {
-    // La tecla Ctrl está presionada
+    // La tecla Ctrl está presionada (ES NECESARIO PRESIONAR CTRL + CUALQUIER OTRA TECLA)
     ctrlKeyPressed = true;
 } else {
     ctrlKeyPressed = false;
 }
 if (glutGetModifiers() & GLUT_ACTIVE_ALT) {
-    // La tecla Alt está presionada
+    // La tecla Alt está presionada (ES NECESARIO PRESIONAR ALT + CUALQUIER OTRA TECLA)
     altKeyPressed = true;
 } else {
     altKeyPressed = false;
@@ -244,7 +258,6 @@ if (glutGetModifiers() & GLUT_ACTIVE_ALT) {
     {
     case 'z': case 'Z':
         cubo1 = 1 - cubo1;
-        printf("Tecla z presionada");
         break;
     case 'x': case 'X':
         extremidad = (extremidad + 1) % 4;
@@ -401,6 +414,7 @@ int main(int argc, char **argv)
     init();
     glutDisplayFunc(display);
     glutReshapeFunc(reshape);
+    glutTimerFunc(speed, timerRotation, 5);
     glutIdleFunc(idle);
     glutKeyboardFunc(keyboard);
     glutMainLoop();
