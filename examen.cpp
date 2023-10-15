@@ -10,14 +10,26 @@ typedef struct {
     GLfloat z;
 } Angulo;
 
+typedef struct {
+    GLfloat r;
+    GLfloat g;
+    GLfloat b;
+} Color;
+
+Color colorpasajeros = {0.84f, 1.0f, 0.62f};
+
 int ancho = 800;
 int alto = 800;
 int speed = 50;
 Angulo anguloBrazo = {0.0f, 0.0f, 0.0f};
 Angulo anguloCabina = {0.0f, 0.0f, 0.0f};
+Angulo anguloNoria = {0.0f, 0.0f, 0.0f};
 bool bajando = false;
 int sentido = 0;
 int hazPerspectiva = 0;
+int parar = 0;
+int mouseX, mouseY;
+bool altKeyPressed = false;
 
 //-------------------------------------MOVIMIENTO NORIA--------------------------------------
 
@@ -28,8 +40,7 @@ void timerRotation(int value){
             bajando = true;
         } else {
             bajando = false;
-        }
-        
+        } 
         if (bajando) {
             anguloBrazo.z += 2.0f;
             anguloCabina.z -= 2.0f;
@@ -46,7 +57,6 @@ void timerRotation(int value){
         } else {
             bajando = false;
         }
-        
         if (bajando) {
             anguloBrazo.z -= 2.0f;
             anguloCabina.z += 2.0f;
@@ -55,6 +65,13 @@ void timerRotation(int value){
             anguloCabina.z += 1.0f;
         }
     }
+    if (parar) {
+        if (fmod(anguloBrazo.z, 360.0) >= 260 && fmod(anguloBrazo.z, 360.0) <= 280)
+        {
+            speed = 999999999;
+        }
+    }
+    
     glutTimerFunc(speed, timerRotation, value); 
 }
 
@@ -69,7 +86,7 @@ void reshape(int width, int height) {
         float aspect = (float)width / (float)height;
         gluPerspective(85.0f, (GLfloat)width/(GLfloat)height, 1.0f, 40.0f);
     } else 
-        glOrtho(-15, 15, -15, 25, -15, 25);
+        glOrtho(-15, 15, -15, 35, -15, 35);
 
     glMatrixMode(GL_MODELVIEW);
     ancho = width;
@@ -125,7 +142,7 @@ void drawCube(int type)
         glScalef(4.0f, 2.0f, 4.0f);
         break;
     case 1:
-        glColor3f(0.84f, 1.0f, 0.62f);
+        glColor3f(colorpasajeros.r, colorpasajeros.g, colorpasajeros.b);
         glScalef(1.0f, 1.0f, 1.0f);
         break;
     case 2:
@@ -194,14 +211,16 @@ void drawTriangle() {
     glEnd();
 }
 
-//------------------------------------DISPLAY INIT Y IDLE---------------------------------
+//------------------------------------------DISPLAY-----------------------------------------------
 
 void display() {
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     glLoadIdentity();
 
-    glTranslatef(0.0f, -5.0f, -25.0f);
+    glTranslatef(0.0f, 0.0f, -25.0f);
 
+    glRotatef(anguloNoria.x, 1.0f, 0.0f, 0.0f);
+    glRotatef(anguloNoria.y, 0.0f, 1.0f, 0.0f);
     drawBase();
     glTranslatef(0.0f, 1.0f, 0.0f);
     drawTriangle();
@@ -216,17 +235,90 @@ void display() {
     glutSwapBuffers();
 }
 
+
+//----------------------------------MENUS----------------------------------
+
+void menu_1(int value)
+{
+    // Submenú "Visualizacion"
+    switch (value)
+    {
+    case 0:
+        colorpasajeros = {0.84f, 1.0f, 0.62f};
+        break;
+    case 1:
+        colorpasajeros = {0.2f, 0.2f, 0.62f};
+        break;
+    case 2:
+        colorpasajeros = {0.62f, 0.2f, 0.2f};
+        break;
+    case 3:
+        colorpasajeros = {0.8f, 0.8f, 0.2f};
+        break;
+    }
+}
+
+void menu_2(int value)
+{
+    // Submenú "Velocidades"
+    switch (value)
+    {
+    case 0:
+        speed = 80;        // Modo lento
+        break;
+    case 1:
+        speed = 50;         // Modo normal
+        break;
+    case 2:
+        speed = 10;         //Modo rapido
+        break;
+    }
+}
+
+//---------------------------------------------INIT Y IDLE---------------------------------------
+
 void init() {
     glClearColor(0, 0, 0, 0);
     glEnable(GL_DEPTH_TEST);
     ancho = 800;
     alto = 800;
     
+    int submenu_visualizacion = glutCreateMenu(menu_1);
+    glutAddMenuEntry("Verde", 0);
+    glutAddMenuEntry("Azul", 1);
+    glutAddMenuEntry("Rojo", 2);
+    glutAddMenuEntry("Amarillo", 3);
+
+    int submenu_velocidades = glutCreateMenu(menu_2);
+    glutAddMenuEntry("Lento", 0);
+    glutAddMenuEntry("Normal", 1);
+    glutAddMenuEntry("Rapido", 2);
+
+    glutCreateMenu(menu_1);
+    glutAddSubMenu("Colores", submenu_visualizacion);
+    glutAddSubMenu("Velocidades", submenu_velocidades);
+    glutAddMenuEntry("Salir", 0);
+    glutAttachMenu(GLUT_RIGHT_BUTTON);
+
     //glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 }
 
 void idle() {
+    if (altKeyPressed)
+    {
+        anguloNoria.y = mouseX;
+    } else {
+        //anguloNoria.x = mouseY;
+    }
+    
     display();
+}
+
+//---------------------------------------MOUSE-----------------------------------------
+
+void mouseMotion(int x, int y) {
+    mouseX = x;
+    mouseY = y;
 }
 
 //--------------------------------------------KEYBOARD--------------------------------------
@@ -236,8 +328,19 @@ void idle() {
 //
 //                                        R-ALTERNAR SENTIDO
 //
+//                                        S-PARAR NORIA
+//
+//                                        QA-MOVER CAMARA Y
+
 void keyboard(unsigned char key, int x, int y)
 {
+    if (glutGetModifiers() & GLUT_ACTIVE_ALT) {
+    // La tecla Alt está presionada (ES NECESARIO PRESIONAR ALT + CUALQUIER OTRA TECLA)
+        altKeyPressed = true;
+    } else {
+        altKeyPressed = false;
+    }
+
     switch (key)
     {
     case 'p':
@@ -254,6 +357,18 @@ void keyboard(unsigned char key, int x, int y)
     case 'R':
         sentido = 1 - sentido;
         break;
+    case 's':
+    case 'S':
+        parar = 1 - parar;
+        break;
+    case 'q':
+    case 'Q':
+        anguloNoria.y++;
+        break;
+    case 'a':
+    case 'A':
+        anguloNoria.y--;
+        break;
     case 27:   // escape
         exit(0);
         break;
@@ -269,6 +384,7 @@ int main(int argc, char **argv) {
     glutInitWindowPosition(100, 100);
     glutInitWindowSize(ancho, alto);
     glutCreateWindow("Examen");
+    glutPassiveMotionFunc(mouseMotion);
     init();
     glutDisplayFunc(display);
     glutReshapeFunc(reshape);
