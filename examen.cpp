@@ -76,7 +76,7 @@ void reshape(int width, int height) {
     alto = height;
 }
 
-//------------------------------------FIGURAS--------------------------------------
+//----------------------------------------------FIGURAS----------------------------------------
 
 void drawBase() {
     int sides = 30;
@@ -194,6 +194,8 @@ void drawTriangle() {
     glEnd();
 }
 
+//------------------------------------DISPLAY INIT Y IDLE---------------------------------
+
 void display() {
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     glLoadIdentity();
@@ -227,6 +229,13 @@ void idle() {
     display();
 }
 
+//--------------------------------------------KEYBOARD--------------------------------------
+//
+//                                        P-PERSPECTIVA
+//                                        O-ORTOGONAL
+//
+//                                        R-ALTERNAR SENTIDO
+//
 void keyboard(unsigned char key, int x, int y)
 {
     switch (key)
@@ -250,6 +259,8 @@ void keyboard(unsigned char key, int x, int y)
         break;
     }
 }
+
+//----------------------------------------MAIN-------------------------------------------
 
 int main(int argc, char **argv) {
 
